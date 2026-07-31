@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const getSnippets = (apiKey) => ({
-    curl: `curl -X POST http://localhost:8000/api/v1/compress \\
+    curl: `curl -X POST https://image-compressor-production-d10e.up.railway.app/api/v1/compress \\
   -H "X-API-Key: ${apiKey}" \\
   -F "file=@image.jpg" \\
   -F "compressionPercentage=80" \\
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     python: `import requests
 
-url = "http://localhost:8000/api/v1/compress"
+url = "https://image-compressor-production-d10e.up.railway.app/api/v1/compress"
 headers = {
     "X-API-Key": "${apiKey}"
 }
@@ -64,7 +64,7 @@ const formData = new FormData();
 formData.append('file', fs.createReadStream('image.jpg'));
 formData.append('compressionPercentage', '80');
 
-fetch('http://localhost:8000/api/v1/compress', {
+fetch('https://image-compressor-production-d10e.up.railway.app/api/v1/compress', {
   method: 'POST',
   headers: {
     'X-API-Key': '${apiKey}'
@@ -95,7 +95,7 @@ class Program
 
         client.DefaultRequestHeaders.Add("X-API-Key", "${apiKey}");
 
-        var response = await client.PostAsync("http://localhost:8000/api/v1/compress", form);
+        var response = await client.PostAsync("https://image-compressor-production-d10e.up.railway.app/api/v1/compress", form);
         var imageBytes = await response.Content.ReadAsByteArrayAsync();
 
         await File.WriteAllBytesAsync("compressed_image.webp", imageBytes);
@@ -108,7 +108,7 @@ async function compressImage(fileInput) {
   formData.append('file', fileInput.files[0]);
   formData.append('compressionPercentage', '80');
 
-  const response = await fetch('http://localhost:8000/api/v1/compress', {
+  const response = await fetch('https://image-compressor-production-d10e.up.railway.app/api/v1/compress', {
     method: 'POST',
     headers: {
       'X-API-Key': '${apiKey}'
@@ -148,7 +148,7 @@ func main() {
     writer.WriteField("compressionPercentage", "80")
     writer.Close()
 
-    req, _ := http.NewRequest("POST", "http://localhost:8000/api/v1/compress", body)
+    req, _ := http.NewRequest("POST", "https://image-compressor-production-d10e.up.railway.app/api/v1/compress", body)
     req.Header.Set("X-API-Key", "${apiKey}")
     req.Header.Set("Content-Type", writer.FormDataContentType())
 
@@ -163,7 +163,7 @@ func main() {
 
     php: `<?php
 $ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, 'http://localhost:8000/api/v1/compress');
+curl_setopt($ch, CURLOPT_URL, 'https://image-compressor-production-d10e.up.railway.app/api/v1/compress');
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_POST, true);
 
@@ -200,7 +200,7 @@ public class Main {
                 .build();
 
         Request request = new Request.Builder()
-                .url("http://localhost:8000/api/v1/compress")
+                .url("https://image-compressor-production-d10e.up.railway.app/api/v1/compress")
                 .addHeader("X-API-Key", "${apiKey}")
                 .post(requestBody)
                 .build();
