@@ -9,3 +9,4 @@ gunicorn
 PyJWT
 pillow-avif-plugin
 requests
+psutil

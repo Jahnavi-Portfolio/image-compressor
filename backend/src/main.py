@@ -10,7 +10,26 @@ from datetime import datetime, timezone
 import jwt
 import os
 import time
+import json
+import logging
+import tempfile
+import shutil
+import psutil
 from sqlalchemy.orm import Session
+
+# Setup JSON Telemetry Logger
+logger = logging.getLogger("api_telemetry")
+logger.setLevel(logging.INFO)
+ch = logging.StreamHandler()
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {"level": record.levelname, "msg": record.getMessage(), "time": self.formatTime(record, self.datefmt)}
+        if hasattr(record, 'extra_data'):
+            log_record.update(record.extra_data)
+        return json.dumps(log_record)
+ch.setFormatter(JSONFormatter())
+logger.addHandler(ch)
+
 from sqlalchemy import text
 
 # Import everything from the new database module
@@ -115,21 +134,41 @@ def compress_image(
     file: UploadFile = File(...),
     api_key: str = Depends(verify_api_key)
 ):
+    req_start_time = time.time()
+    
+    # --- GRACEFUL LOAD SHEDDING ---
+    if psutil.cpu_percent() > 85.0:
+        logger.error("Load shedding triggered (CPU > 85%)", extra={"extra_data": {"api_key": api_key}})
+        raise HTTPException(status_code=503, detail="Server is currently at maximum capacity. Please try again.")
+
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File provided is not an image.")
-
-    # --- SECURITY: Max File Size Validation ---
-    MAX_FILE_SIZE = 15 * 1024 * 1024 # 15 MB limit to prevent network congestion
-    file_bytes = file.file.read()
-    if len(file_bytes) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail="File too large. Maximum size is 15MB.")
 
     out_format = format.lower()
     if out_format not in ("webp", "avif"):
         out_format = "webp"
 
+    # --- MEMORY-MAPPED STREAMING & SIZE VALIDATION ---
+    MAX_FILE_SIZE = 15 * 1024 * 1024 # 15 MB limit
+    temp_path = None
+    
     try:
-        with Image.open(io.BytesIO(file_bytes)) as img:
+        # Stream file to disk to avoid loading massive files directly into RAM
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_path = temp_file.name
+            bytes_written = 0
+            while chunk := file.file.read(8192):
+                bytes_written += len(chunk)
+                if bytes_written > MAX_FILE_SIZE:
+                    temp_file.close()
+                    os.remove(temp_path)
+                    raise HTTPException(status_code=413, detail="File too large. Maximum size is 15MB.")
+                temp_file.write(chunk)
+
+        with Image.open(temp_path) as img:
+            # --- EXIF METADATA STRIPPING ---
+            img.info.pop('exif', None)
+            
             quality = max(1, min(100, 100 - compressionPercentage))
             if img.mode in ("RGBA", "P"):
                 img = img.convert("RGBA")
@@ -144,12 +183,29 @@ def compress_image(
 
         headers = {
             "Content-Disposition": f'attachment; filename="compressed_{filename}.{out_format}"',
-            "Cache-Control": "public, max-age=31536000"
+            "Cache-Control": "public, max-age=31536000, immutable" # Edge Caching
         }
+        
+        # --- STRUCTURED JSON TELEMETRY ---
+        latency_ms = int((time.time() - req_start_time) * 1000)
+        logger.info("Compression Successful", extra={"extra_data": {
+            "api_key": api_key,
+            "latency_ms": latency_ms,
+            "original_size": bytes_written,
+            "compressed_size": len(compressed_data),
+            "saved_bytes": bytes_written - len(compressed_data)
+        }})
+        
         return Response(content=compressed_data, media_type=media_type, headers=headers)
 
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error("Compression Failed", extra={"extra_data": {"api_key": api_key, "error": str(e)}})
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
 
 # --- DEVOPS: Health Check Endpoint for Railway ---
 @app.get("/health")
