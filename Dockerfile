@@ -10,4 +10,4 @@ COPY backend/src/ ./src/
 COPY frontend/ /frontend/
 
 EXPOSE 8000
-CMD ["gunicorn", "src.main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "10"]
+CMD ["sh", "-c", "python -c 'from src.database import init_db; init_db()' && gunicorn src.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --timeout 10"]

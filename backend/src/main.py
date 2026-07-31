@@ -53,19 +53,7 @@ from sqlalchemy.exc import OperationalError
 # Initialize the database on startup
 @app.on_event("startup")
 def on_startup():
-    retries = 5
-    while retries > 0:
-        try:
-            init_db()
-            print("Database connection successful.")
-            break
-        except OperationalError:
-            print("Database connection failed. Retrying...")
-            retries -= 1
-            time.sleep(5)
-    if retries == 0:
-        print("Could not connect to the database. Exiting.")
-        exit(1)
+    print("Application Startup Complete")
 
 app.add_middleware(
     CORSMiddleware,
