@@ -11,6 +11,7 @@ import jwt
 import os
 import time
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 # Import everything from the new database module
 from src.database import (
@@ -28,7 +29,6 @@ import pillow_avif
 
 app = FastAPI(title="Komute Image Compression Service - Simple")
 
-import time
 from sqlalchemy.exc import OperationalError
 
 # Initialize the database on startup
@@ -103,6 +103,11 @@ def verify_api_key(
     
     return api_key
 
+# --- SECURITY: Prevent Decompression Bomb Attacks ---
+# A malicious user could upload a tiny 1KB zip-bomb image that expands to 100GB in memory, crashing the server.
+# This strictly caps image processing to ~50 Megapixels (e.g. 7000x7000)
+Image.MAX_IMAGE_PIXELS = 50_000_000
+
 @app.post("/api/v1/compress")
 def compress_image(
     compressionPercentage: int = Form(80),
@@ -113,20 +118,18 @@ def compress_image(
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File provided is not an image.")
 
-    MAX_FILE_SIZE = 10 * 1024 * 1024 # 10 MB
-    if file.size and file.size > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail="File too large (max 10MB).")
+    # --- SECURITY: Max File Size Validation ---
+    MAX_FILE_SIZE = 15 * 1024 * 1024 # 15 MB limit to prevent network congestion
+    file_bytes = file.file.read()
+    if len(file_bytes) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="File too large. Maximum size is 15MB.")
 
     out_format = format.lower()
     if out_format not in ("webp", "avif"):
         out_format = "webp"
 
     try:
-        image_data = file.file.read()
-        if len(image_data) > MAX_FILE_SIZE:
-            raise HTTPException(status_code=413, detail="File too large (max 10MB).")
-
-        with Image.open(io.BytesIO(image_data)) as img:
+        with Image.open(io.BytesIO(file_bytes)) as img:
             quality = max(1, min(100, 100 - compressionPercentage))
             if img.mode in ("RGBA", "P"):
                 img = img.convert("RGBA")
@@ -147,6 +150,16 @@ def compress_image(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# --- DEVOPS: Health Check Endpoint for Railway ---
+@app.get("/health")
+def health_check(db: Session = Depends(get_db)):
+    try:
+        # Verify DB connection is alive
+        db.execute(text("SELECT 1"))
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        raise HTTPException(status_code=503, detail="Service Unavailable: Database down")
 
 # Models
 class LoginRequest(BaseModel):
