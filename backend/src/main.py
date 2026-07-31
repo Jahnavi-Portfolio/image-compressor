@@ -131,6 +131,8 @@ Image.MAX_IMAGE_PIXELS = 50_000_000
 def compress_image(
     compressionPercentage: int = Form(80),
     format: str = Form("webp"),
+    grayscale: bool = Form(False),
+    maxWidth: int = Form(0),
     file: UploadFile = File(...),
     api_key: str = Depends(verify_api_key)
 ):
@@ -169,9 +171,18 @@ def compress_image(
             # --- EXIF METADATA STRIPPING ---
             img.info.pop('exif', None)
             
-            quality = max(1, min(100, 100 - compressionPercentage))
-            if img.mode in ("RGBA", "P"):
+            # --- ADVANCED IMAGE FILTERS ---
+            if grayscale:
+                img = img.convert("L")
+            elif img.mode in ("RGBA", "P"):
                 img = img.convert("RGBA")
+                
+            if maxWidth > 0 and img.width > maxWidth:
+                ratio = maxWidth / float(img.width)
+                new_height = int((float(img.height) * float(ratio)))
+                img = img.resize((maxWidth, new_height), Image.Resampling.LANCZOS)
+            
+            quality = max(1, min(100, 100 - compressionPercentage))
 
             output_buffer = io.BytesIO()
             img.save(output_buffer, format=out_format, optimize=True, quality=quality)

@@ -73,6 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
     qualitySlider.value = 80;
     qualityVal.textContent = '80%';
     document.getElementById('output-format').value = 'webp';
+    document.getElementById('grayscale').checked = false;
+    document.getElementById('max-width').value = 0;
     clearBtn.click();
   });
 
@@ -94,11 +96,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const apiKey = document.getElementById('api-key').value;
     const quality = qualitySlider.value;
     const format = document.getElementById('output-format').value;
+    const grayscale = document.getElementById('grayscale').checked;
+    const maxWidth = document.getElementById('max-width').value || 0;
     
     const formData = new FormData();
     formData.append("file", currentFile);
     formData.append("compressionPercentage", quality);
     formData.append("format", format);
+    formData.append("grayscale", grayscale);
+    formData.append("maxWidth", maxWidth);
     
     const startTime = Date.now();
     
