@@ -8,8 +8,12 @@ db_url = settings.database_url
 if db_url and db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 if db_url == "${{Postgres.DATABASE_URL}}" or not db_url or "://" not in db_url:
-    # Fallback if Railway variable was entered incorrectly
-    db_url = "sqlite:///./apiKeys.db"
+    # Use a 'data' folder so users can mount a Railway Volume to /app/data to prevent data loss
+    import os
+    data_dir = os.path.join(os.getcwd(), "data")
+    os.makedirs(data_dir, exist_ok=True)
+    # SQLAlchemy requires an extra slash for absolute paths on Windows sometimes, but using a relative path like sqlite:///data/apiKeys.db works universally.
+    db_url = "sqlite:///data/apiKeys.db"
 
 engine = create_engine(db_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
