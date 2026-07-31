@@ -131,7 +131,6 @@ Image.MAX_IMAGE_PIXELS = 50_000_000
 def compress_image(
     compressionPercentage: int = Form(80),
     format: str = Form("webp"),
-    grayscale: bool = Form(False),
     maxWidth: int = Form(0),
     file: UploadFile = File(...),
     api_key: str = Depends(verify_api_key)
@@ -172,9 +171,7 @@ def compress_image(
             img.info.pop('exif', None)
             
             # --- ADVANCED IMAGE FILTERS ---
-            if grayscale:
-                img = img.convert("L")
-            elif img.mode in ("RGBA", "P"):
+            if img.mode in ("RGBA", "P"):
                 img = img.convert("RGBA")
                 
             if maxWidth > 0 and img.width > maxWidth:
