@@ -67,6 +67,15 @@ document.addEventListener('DOMContentLoaded', () => {
     fileInput.value = '';
   });
 
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    apiUrlInput.value = window.location.origin + '/api/v1/compress';
+    document.getElementById('api-key').value = '';
+    qualitySlider.value = 80;
+    qualityVal.textContent = '80%';
+    document.getElementById('output-format').value = 'webp';
+    clearBtn.click();
+  });
+
   const formatBytes = (bytes, decimals = 2) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024, dm = decimals < 0 ? 0 : decimals;
