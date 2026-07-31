@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Testing Playground</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    /* Additional styles for playground */
+    .playground-container {
+      max-width: 72rem;
+      margin: 0 auto;
+      padding: 4rem 1.5rem;
+    }
+    .playground-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 2rem;
+    }
+    .config-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+    }
+    .preview-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .dropzone {
+      border: 2px dashed var(--border-color);
+      border-radius: 1.5rem;
+      padding: 3rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .dropzone.dragover {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.1);
+    }
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    .result-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 1rem;
+      padding: 1.25rem;
+    }
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="playground-container">
+    <div class="playground-header">
+      <div style="display: inline-block; padding: 0.5rem 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 9999px; margin-bottom: 1.5rem;">
+        <span style="color: #fbbf24;">⚡ Next-Gen Compression</span>
+      </div>
+      <h1 style="font-size: 4rem; margin-bottom: 1.5rem;">Testing Playground</h1>
+      <p style="color: var(--text-muted); font-size: 1.125rem;">Connect your microservice, tweak the parameters, and watch your images shrink instantly.</p>
+      <a href="/index.html" class="primary-btn" style="display: inline-block; width: auto; margin-top: 1rem; text-decoration: none;">Back to Home</a>
+    </div>
+
+    <div class="grid-layout">
+      <!-- Config Panel -->
+      <div class="config-panel">
+        <h2 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+          ⚙️ Configuration
+        </h2>
+        <div class="form-group">
+          <label>API Endpoint</label>
+          <input type="text" id="api-url" value="http://localhost:8000/api/v1/compress">
+        </div>
+        <div class="form-group">
+          <label>API Key (Optional)</label>
+          <input type="password" id="api-key" placeholder="sk_test_...">
+        </div>
+        <div class="form-group" style="margin-top: 2rem;">
+          <div style="display: flex; justify-content: space-between;">
+            <label>Compression Level</label>
+            <span id="quality-val" style="color: var(--primary); font-weight: bold;">80%</span>
+          </div>
+          <input type="range" id="quality" min="1" max="100" value="80" style="width: 100%; margin-top: 0.5rem;">
+        </div>
+        <div class="form-group" style="margin-top: 2rem;">
+          <label>Output Format</label>
+          <select id="output-format" style="width: 100%; padding: 0.625rem 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.5rem; color: white; margin-top: 0.5rem; outline: none;">
+            <option value="webp" selected>WEBP</option>
+            <option value="avif">AVIF</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Preview Panel -->
+      <div class="preview-panel">
+        <div id="upload-area" class="dropzone">
+          <input type="file" id="file-input" accept="image/*" class="hidden">
+          <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;">Drop your image here</h3>
+          <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Supports JPG, PNG, WEBP. Drag and drop or click to browse.</p>
+          <button id="browse-btn" class="primary-btn" style="width: auto; background: white; color: black;">Browse Files</button>
+        </div>
+
+        <div id="preview-area" class="hidden">
+          <div style="background: black; border-radius: 1rem; overflow: hidden; margin-bottom: 1.5rem; text-align: center; max-height: 400px;">
+            <img id="original-preview" style="max-width: 100%; max-height: 400px; object-fit: contain;">
+          </div>
+          <button id="compress-btn" class="primary-btn" style="padding: 1rem; font-size: 1.125rem;">⚡ Compress Image</button>
+          <button id="clear-btn" style="background: none; border: none; color: var(--text-muted); width: 100%; margin-top: 1rem; cursor: pointer;">Clear Image</button>
+        </div>
+
+        <div id="error-msg" class="error-message hidden"></div>
+
+        <div id="result-area" class="hidden">
+          <div class="results-grid">
+            <div class="result-card">
+              <p style="font-size: 0.75rem; color: var(--text-muted);">Original Size</p>
+              <p id="res-orig" style="font-size: 1.5rem; font-weight: bold;">-</p>
+            </div>
+            <div class="result-card">
+              <p style="font-size: 0.75rem; color: var(--text-muted);">Compressed</p>
+              <p id="res-comp" style="font-size: 1.5rem; font-weight: bold; color: var(--success);"> -</p>
+            </div>
+            <div class="result-card" style="background: var(--success-bg); border-color: rgba(16,185,129,0.2);">
+              <p style="font-size: 0.75rem; color: var(--success);">Space Saved</p>
+              <p id="res-saved" style="font-size: 1.5rem; font-weight: bold; color: var(--success);">-%</p>
+            </div>
+            <div class="result-card">
+              <p style="font-size: 0.75rem; color: var(--text-muted);">Processing Time</p>
+              <p id="res-time" style="font-size: 1.5rem; font-weight: bold;">-ms</p>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
+            <div style="position: relative;">
+              <div style="position: absolute; top: 1rem; left: 1rem; background: rgba(0,0,0,0.5); padding: 0.25rem 0.5rem; border-radius: 0.5rem; font-size: 0.75rem;">Original</div>
+              <img id="res-orig-img" style="width: 100%; border-radius: 1rem;">
+            </div>
+            <div style="position: relative;">
+              <div style="position: absolute; top: 1rem; left: 1rem; background: rgba(16,185,129,0.2); border: 1px solid var(--success); color: var(--success); padding: 0.25rem 0.5rem; border-radius: 0.5rem; font-size: 0.75rem;">Compressed</div>
+              <img id="res-comp-img" style="width: 100%; border-radius: 1rem;">
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+            <a id="download-btn" class="primary-btn" style="text-align: center; text-decoration: none;">Download Image</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="/playground.js"></script>
+</body>
+</html>

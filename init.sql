@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS "apiKeys" (
+  id TEXT PRIMARY KEY,
+  key TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  "machineId" TEXT NOT NULL,
+  "isActive" BOOLEAN DEFAULT true,
+  "createdAt" TEXT NOT NULL
+);
