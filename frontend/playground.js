@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultArea = document.getElementById('result-area');
   const qualitySlider = document.getElementById('quality');
   const qualityVal = document.getElementById('quality-val');
+  const apiUrlInput = document.getElementById('api-url');
+  
+  apiUrlInput.value = window.location.origin + '/api/v1/compress';
   
   let currentFile = null;
 
