@@ -4,7 +4,14 @@ from sqlalchemy import create_engine, Column, String, Boolean, Integer
 from sqlalchemy.orm import sessionmaker, declarative_base, Session
 from src.config import settings
 
-engine = create_engine(settings.database_url)
+db_url = settings.database_url
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+if db_url == "${{Postgres.DATABASE_URL}}" or not db_url or "://" not in db_url:
+    # Fallback if Railway variable was entered incorrectly
+    db_url = "sqlite:///./apiKeys.db"
+
+engine = create_engine(db_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
