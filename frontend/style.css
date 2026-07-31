@@ -203,7 +203,7 @@ body {
   background: rgba(24, 24, 27, 0.5);
   border: 1px solid rgba(39, 39, 42, 0.8);
   border-radius: 1rem;
-  overflow: hidden;
+  overflow-x: auto;
   backdrop-filter: blur(12px);
 }
 
@@ -222,11 +222,14 @@ th {
   background: rgba(24, 24, 27, 0.8);
   border-bottom: 1px solid rgba(39, 39, 42, 0.8);
   font-weight: 500;
+  white-space: nowrap;
 }
 
 td {
   padding: 1rem 1.5rem;
   border-bottom: 1px solid rgba(39, 39, 42, 0.5);
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
 tr:hover {
@@ -247,13 +250,15 @@ tr:hover {
 .secret-key-box {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.75rem;
+  justify-content: center;
+  padding: 0.35rem 0.75rem;
   background: var(--bg-dark);
   border: 1px solid var(--border-color);
-  border-radius: 0.25rem;
+  border-radius: 0.5rem;
   font-family: monospace;
-  font-size: 0.75rem;
-  color: var(--text-muted);
+  font-size: 0.875rem;
+  letter-spacing: 0.5px;
+  color: #e4e4e7;
   user-select: all;
 }
 
